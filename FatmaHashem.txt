@@ -1,0 +1,51 @@
+1-  select region , salesperson ,  quantity*unit_price over (partition by salesperson , region) as total_sales 
+ from electronics_sales ;
+--------------------------------------------------------------------------------------------------------------------------
+2-select  sum(total_sales) over (partition by months order by months  )  as total_revenue , months 
+ --quantity*unit_price  as total_sales ,  to_char (order_date,'mm-yy') as months   --
+ from  (select quantity*unit_price  as total_sales ,  to_char (order_date,'mm-yy') as months    from electronics_sales) 
+ order by months ;
+--------------------------------------------------------------------------------------------------------------------------
+3- select category ,  avg (quantity*unit_price ) over (partition by category ) as agvl_sales
+ from electronics_sales ;
+--------------------------------------------------------------------------------------------------------------------------
+4- select*
+ from (SELECT region ,  category , quantity , unit_price  FROM electronics_SALES) 
+pivot (
+sum (quantity * unit_price) 
+for category  in ('Mobiles' as Mobiles , 'Laptops' as Laptops ,'Tablets' as Tablets )
+) order by region ;
+--------------------------------------------------------------------------------------------------------------------------
+5- select  order_id , order_date, salesperson   ,  avg (sales_amount) over (partition by months order by months  )  as month_avg  
+ --quantity*unit_price  as total_sales ,  to_char (order_date,'mm-yy') as months   --
+ ,sum_month_salary - avg(sales_amount) over (partition by months order by months )  as divion_avg , sum_month_salary + divion_avg as sales_amout
+ from  (select quantity*unit_price  as sales_amount ,order_id , order_date, salesperson , to_char (order_date,'mm-yy')as months  ,
+ sum(quantity * unit_price) over (partition by order_date , salesperson order by order_date asc) as sum_month_salary   ,
+ sum(quantity * unit_price) over (partition by order_date , salesperson order by order_date asc) - avg(quantity*unit_price) over 
+(partition by to_char (order_date,'mm-yy') order by to_char (order_date,'mm-yy') ) as divion_avg 
+  from electronics_sales)
+ order by order_date ;
+--------------------------------------------------------------------------------------------------------------------------------
+ 6-select months,total_price,LAG(total_price,1,0) OVER(order by months) as per_month ,
+total_price -LAG(total_price,1,0) OVER(order by months) as growth
+from (select sum(quantity * unit_price) as total_price,TO_CHAR(order_date, 'mm-yyyy') AS  months from electronics_sales 
+group by TO_CHAR(order_date, 'mm-yyyy'));
+------------------------------------------------------------------------------------------------------------------------------------
+9- select distinct salesperson,first_value(order_date) over (partition by salesperson order by order_date) as first_sale_date,
+first_value(product) over (partition by salesperson order by order_date) as first_product
+from electronics_sales;
+-------------------------------------------------------------------------------------------------------------------------------
+8-select region , product,total_sales, rank() over (partition by region order by product asc ) as pr 
+from ( select region , product,salesperson,sum (quantity * unit_price) over (partition by region, product ) as total_sales from electronics_sales);
+---------------------------------------------------------------------------------------------------------------------------------------------
+7-select order_id, region, quantity * unit_price as sale_value, avg( quantity * unit_price) over (partition by region order by region)as rejonal_avg,
+case 
+when quantity * unit_price < avg( quantity * unit_price) over (partition by region order by region) then
+'normal' 
+when quantity * unit_price >= avg( quantity * unit_price) over (partition by region order by region) then
+'above avarage'
+end case 
+from electronics_sales;
+
+
+
